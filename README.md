@@ -1,4 +1,4 @@
-# SDL Fox
+# SDL_fox
 
 ![SDL logo](data/SDL_logo.png) ![fox](data/fox.png)
 
@@ -11,20 +11,22 @@
 
 ### About
 
-SDL_Fox is a Utf8 font rendering library for Simple Direct Media Layer 2.x (SDL2). At its core it is a wrapper around the freetype2 library, making use of fontconfig for resolving fonts.
+SDL_fox is a utf-8 font rendering library for Simple Direct Media Layer 2.x (SDL2). At its core it is a wrapper around the freetype2 library, making use of fontconfig for resolving font patterns.
 
 ### How does it differ from SDL_ttf?
 
-SDL_ttf is another well-established library one could use to handle fonts with SDL. However SDL_ttf renders text into an SDL_Texture. This means that whenever text changes or is modified it has to create a new texture and destroy the old one. For some applications this may be ok, but for an application like a notepad, which may frequently update a lot of text, it certainly is very cumbersome and counterintuitive to use.
+SDL_ttf is another library for handling fonts with SDL. However, unlike SDL_fox, SDL_ttf renders a string of text into an SDL_Surface. Each time the text is modified or requires updating it has to create a new surface (and subsequently that surface is commonly converted into an SDL_Texture) and destroy the old one. This can  certainly be very cumbersome and counterintuitive to use in most applications.
 
-SDL_Fox on the other hand creates a single big texture upon loading the font. Each character contained within the font is rendered to that texture and its position and metrics are stored internally. Whenever text is to be drawn, SDL_Fox uses the position and metrics of each character to find the respective glyph inside the texture. Then it draws the part of the texture containing the character.
+SDL_Fox on the other hand creates a single big texture (called 'atlas') upon loading the font. Each character contained within the font is rendered to that texture and its position and metrics are stored internally. Whenever text is to be drawn, SDL_fox uses the position and metrics of each character to find the respective glyph inside the texture. Then it draws the part of the texture containing the character.
 
-For text-intensive applications with lots of volatile text such as word processors, terminal emulators or videogames SDL_Fox provides a significantly easier to use interface - no need to worry about creating and destroying textures each time text is modified. This in turn may increase performance for some applications, although performance is not the issue SDL_Fox is trying to solve (the difference should be neglible in real world use cases). Performance might even be slightly worse than SDL_ttf in some scenarios e.g. for a large batch of constant text. Here SDL_ttf requires only one draw operation (because it just needs to display one texture). SDL_Fox on the other hand needs to iterate over and draw each character. However the disadvantage now becomes apparent - changing just one character of that large chunk of text requires SDL_ttf to create and render a whole new texture, while SDL_Fox does not do anything, except iterate over a new character and use a different index inside its glyph atlas. Keep in mind that the communication between CPU and GPU is slow, so creating and destroying multiple textures every main loop cycle is not as neglible.
+For text-intensive applications with lots of volatile text such as word processors, terminal emulators or videogames SDL_fox provides an easier to use interface - no need to worry about creating and destroying textures each time text is modified. Changing just one character of a large chunk of text requires SDL_ttf to create and render a whole new surface/texture, while SDL_Fox does not do anything, except iterate over a new character and use a different index inside its glyph atlas. Keep in mind that the communication between CPU and GPU is slow, so creating and destroying multiple textures every main loop cycle is not neglible.
 
-Additionally SDL_Fox makes it easier to load fonts according to specified criteria like font name, size and style (bold, italic, etc) by making use of fontconfig. Using fontconfig is optional though, "normal" font loading by path is supported as well.
+Additionally SDL_Fox makes it easier to load fonts according to specified criteria like font name, size and style (bold, italic, etc) by making use of fontconfig. Using fontconfig is optional though, "normal" font loading by path is supported as well.  
+Advanced text rendering functions are also implemented, such as the ability to render text inside a SDL_Rect and incrementally displaying a block of text (like in old 2d role-playing videogames).
 
 ### Example
 ```c
+// Tabsize 4
 #include <SDL2/SDL.h>
 #include "SDL_fox.h"
 
@@ -48,8 +50,7 @@ int main(int argc, char *argv[]) {
 
 		SDL_RenderClear(renderer);
 		static const SDL_Point position = {100, 100};
-		static const SDL_Color color = {255, 255, 255, 255};
-		FOX_RenderText(font, "Hello World!", &position, 0.0f, 0, &color);
+		FOX_RenderText(font, "Hello World!", &position);
 		SDL_RenderPresent(renderer);
 		SDL_Delay(100);
 	}
@@ -68,21 +69,25 @@ Output
 -------
 ![Screenshot](data/Example.png)
 
-That is a lot of code for displaying a simple *"Hello World"* so let's condense it down to only the SDL_Fox functions we have used:
+That is a lot of code for displaying a simple *"Hello World"* so let's condense it down to only the SDL_fox functions we have used:
 ```c
 FOX_Init();
 FOX_Font *font = FOX_OpenFont(renderer, "DejaVu Sans :style=Bold :size=24");
-FOX_RenderText(font, "Hello World!", &position, 0.0f, 0, &color);
+FOX_RenderText(font, "Hello World!", &position);
 FOX_CloseFont(font);
 FOX_Exit();
 ```
 
 ### Installation
 
-#### Install dependencies
-1. `apt install -y make build-essential libsdl2-dev libfontconfig-dev libfreetype-dev`
-2. You may need to edit the Makefile if you are on anything other than debian linux.
-3. Any missing steps or adapation to different systems are given as an exercise to the reader... ;)
+1. `sudo apt install -y make build-essential libsdl2-dev libfontconfig-dev libfreetype-dev`
+2. `git clone [REPOSITORY URL]`
+3. cd ./SDL_fox
+4. `make`
+5. `sudo make install` (installs to /usr/local/include not /usr/lib/SDL2)
+
+You may need to edit the Makefile if you are on anything other than debian linux.
+Missing steps or adaptation to different systems are given as an exercise to the reader... ;)
 
 #### Build
 1. Clone this git repository: `git clone [REPOSITORY URL]`
