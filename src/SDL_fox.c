@@ -13,9 +13,12 @@
  *****************************************************************************/
 
 #include "SDL_fox.h"
+#include <ctype.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#ifdef FOX_USE_FONTCONFIG
 #include <fontconfig.h>
+#endif
 
 /******************************************************************************
  * SDL_fox library state and initialization
@@ -32,11 +35,13 @@ enum FOX_LibraryState FOX_WasInit(void) {
 enum FOX_LibraryState FOX_Init(void) {
 	if(!FOX_WasInit()) {
 		if(!SDL_WasInit(0)) return FOX_state;
-		if(!FcInit()) return FOX_state;
-		if(FT_Init_FreeType(&libfreetype)) {
-			FcFini();
+		if(FT_Init_FreeType(&libfreetype)) return FOX_state;
+		#ifdef FOX_USE_FONTCONFIG
+		if(!FcInit()) {
+			FT_Done_FreeType(libfreetype);
 			return FOX_state;
 		}
+		#endif
 
 		FOX_state = FOX_INITIALIZED;
 	}
@@ -46,7 +51,9 @@ enum FOX_LibraryState FOX_Init(void) {
 
 void FOX_Exit(void) {
 	if(FOX_WasInit()) {
+		#ifdef FOX_USE_FONTCONFIG
 		FcFini();
+		#endif
 		FT_Done_FreeType(libfreetype);
 		FOX_state = FOX_UNINITIALIZED;
 	}
@@ -110,12 +117,12 @@ struct FOX_Font {
 	FOX_GlyphMetrics *metrics;
 	FT_Face face;	/* freetype font face */
 	int length;		/* side length of the atlas texture (sqrt(width^2)) */
-	int size;		/* point size of the font */
-	int height;		/* font height */
+	FOX_FontMetrics size;
 	SDL_bool use_kerning;
 };
 
-FOX_Font* FOX_OpenFont(SDL_Renderer *renderer, const unsigned char *fontstr) {
+#ifdef FOX_USE_FONTCONFIG
+FOX_Font* FOX_OpenFontFc(SDL_Renderer *renderer, const unsigned char *fontstr) {
 	FcPattern *pattern = FcNameParse(fontstr);
 	if(!pattern) return NULL;
 
@@ -133,15 +140,16 @@ FOX_Font* FOX_OpenFont(SDL_Renderer *renderer, const unsigned char *fontstr) {
 	FcPatternGetString(match, FC_FILE, 0, &path);
 	FcPatternGetInteger(match, FC_SIZE, 0, &size);
 
-	FOX_Font *font = FOX_OpenFontEx(renderer, (const char*)path, size);
+	FOX_Font *font = FOX_OpenFont(renderer, (const char*)path, size);
 	FcPatternDestroy(match);
 	FcPatternDestroy(pattern);
 	return font;
 }
+#endif /* FOX_USE_FONTCONFIG */
 
 static SDL_Surface* FOX_RenderFontToSurface(FOX_Font *font);
 
-FOX_Font* FOX_OpenFontEx(SDL_Renderer *renderer, const char *path, int size) {
+FOX_Font* FOX_OpenFont(SDL_Renderer *renderer, const char *path, int size) {
 	FOX_Font *font = SDL_malloc(sizeof(*font));
 	font->renderer = renderer;
 
@@ -160,8 +168,8 @@ FOX_Font* FOX_OpenFontEx(SDL_Renderer *renderer, const char *path, int size) {
 
 	/* Set font parameters */
 	font->length = length;
-	font->size = size;
-	font->height = font->face->size->metrics.height >> 6;
+	font->size.ptsize = size;
+	font->size.height = font->face->size->metrics.height >> 6;
 	font->use_kerning = FT_HAS_KERNING(font->face);
 
 	/* Render characters to surface */
@@ -193,8 +201,8 @@ void FOX_CloseFont(FOX_Font *font) {
 /*****************************************************************************/
 
 static void FOX_SetMetrics(FOX_Font *font, Uint32 index, int xpos, int ypos) {
-	font->metrics[index].rect.x = xpos * font->size;
-	font->metrics[index].rect.y = ypos * font->size;
+	font->metrics[index].rect.x = xpos * font->size.ptsize;
+	font->metrics[index].rect.y = ypos * font->size.ptsize;
 	font->metrics[index].rect.w = font->face->glyph->metrics.width >> 6;
 	font->metrics[index].rect.h = font->face->glyph->metrics.height >> 6;
 	font->metrics[index].bearing.x = font->face->glyph->metrics.horiBearingX >> 6;
@@ -204,7 +212,7 @@ static void FOX_SetMetrics(FOX_Font *font, Uint32 index, int xpos, int ypos) {
 
 SDL_Surface* FOX_RenderFontToSurface(FOX_Font *font) {
 	/* Allocate SDL surface */
-	int width = font->length * font->size;
+	int width = font->length * font->size.ptsize;
 	SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, width, width,
 												32, SDL_PIXELFORMAT_RGBA32);
 	if(!surface) return NULL;
@@ -239,8 +247,8 @@ SDL_Surface* FOX_RenderFontToSurface(FOX_Font *font) {
 
 		FOX_SetMetrics(font, index, xpos, ypos);
 
-		int xreal = xpos * font->size;
-		int yreal = ypos * font->size;
+		int xreal = xpos * font->size.ptsize;
+		int yreal = ypos * font->size.ptsize;
 		for(int y = 0; y < bitmap->rows; y++) {
 			for(int x = 0; x < bitmap->width; x++) {
 				int index = (yreal + y) * surface->w + xreal + x;
@@ -296,7 +304,7 @@ static int FOX_RenderLine(FOX_Font *font, const Uint8 *text,
 		if(n == 0) break;
 
 		/* We shall not exceed the line width by printing the next char. */
-		if(unsafe && ((cursor.x + font->size) >= maxX)) {
+		if(unsafe && ((cursor.x + font->size.ptsize) >= maxX)) {
 			*endptr = text;
 			break;
 		}
@@ -334,7 +342,7 @@ int FOX_RenderChar(FOX_Font *font, Uint32 ch, Uint32 previous_ch,
 		SDL_Color color;
 
 		dstrect.x = position->x;
-		dstrect.y = position->y - metrics->bearing.y + font->height;
+		dstrect.y = position->y - metrics->bearing.y + font->size.height;
 		dstrect.w = metrics->rect.w;
 		dstrect.h = metrics->rect.h;
 
@@ -363,7 +371,7 @@ void FOX_RenderText(FOX_Font *font, const Uint8 *text,
 		Uint32 ch = FOX_Utf8Decode(text, &text);
 		if(ch == '\n') {
 			cursor.x = position->x;
-			cursor.y += font->height;
+			cursor.y += font->size.height;
 			previous_ch = 0;
 			continue;
 		} else {
@@ -377,7 +385,7 @@ int FOX_RenderTextInside(FOX_Font *font, const Uint8 *text,
 			const Uint8 **endptr, const SDL_Rect *rect, int n
 ) {
 	int state = 0;
-	unsigned linesAvailable = rect->h / font->height;
+	unsigned linesAvailable = rect->h / font->size.height;
 	if(linesAvailable == 0) {
 		return -1;
 	}
@@ -401,7 +409,7 @@ int FOX_RenderTextInside(FOX_Font *font, const Uint8 *text,
 		}
 
 		cursor.x = rect->x;
-		cursor.y += font->height;
+		cursor.y += font->size.height;
 	}
 
 	if(*text != '\0') {
@@ -414,8 +422,8 @@ int FOX_RenderTextInside(FOX_Font *font, const Uint8 *text,
 }
 
 void FOX_RenderAtlas(FOX_Font *font, SDL_Point *pos) {
-	SDL_Rect dstrect = {pos->x, pos->y, font->length * font->size,
-										font->length * font->size};
+	SDL_Rect dstrect = {pos->x, pos->y, font->length * font->size.ptsize,
+										font->length * font->size.ptsize};
 	SDL_RenderCopy(font->renderer, font->atlas, NULL, &dstrect);
 }
 
@@ -463,4 +471,8 @@ int FOX_GetAdvance(FOX_Font *font, Uint32 ch, Uint32 previous_ch) {
 
 void FOX_EnableKerning(FOX_Font *font, SDL_bool enable) {
 	font->use_kerning = enable && FT_HAS_KERNING(font->face);
+}
+
+const FOX_FontMetrics* FOX_QueryFontMetrics(FOX_Font *font) {
+	return &font->size;
 }

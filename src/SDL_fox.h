@@ -52,13 +52,18 @@ extern DECLSPEC enum FOX_LibraryState SDLCALL FOX_WasInit(void);
 /* Internal font representation */
 typedef struct FOX_Font FOX_Font;
 
-/* Opens a font using a fontconfig string. */
-extern DECLSPEC FOX_Font* SDLCALL FOX_OpenFont(SDL_Renderer *renderer,
-										const unsigned char *fontstr);
-
 /* Opens a font via a file-path and specified font parameters. */
-extern DECLSPEC FOX_Font* SDLCALL FOX_OpenFontEx(SDL_Renderer *renderer,
-											const char *path, int size);
+extern DECLSPEC FOX_Font* SDLCALL FOX_OpenFont(SDL_Renderer *renderer,
+										const char *path, int size);
+
+/* build option to enable fontconfig */
+#ifdef FOX_USE_FONTCONFIG
+
+/* Opens a font using a fontconfig string. */
+extern DECLSPEC FOX_Font* SDLCALL FOX_OpenFontFc(SDL_Renderer *renderer,
+											const unsigned char *fontstr);
+
+#endif /* FOX_USE_FONTCONFIG */
 
 /* Closes a previously opened font via its handle. */
 extern DECLSPEC void SDLCALL FOX_CloseFont(FOX_Font *font);
@@ -116,6 +121,16 @@ extern DECLSPEC int SDLCALL FOX_GetAdvance(FOX_Font *font,
 /* Enable/Disable kerning for the specified font. */
 extern DECLSPEC void SDLCALL FOX_EnableKerning(FOX_Font *font,
 												SDL_bool enable);
+
+/* Specifies the metrics of the font */
+typedef struct {
+	int height;
+	int ptsize;
+} FOX_FontMetrics;
+
+/* Queries the font metrics */
+extern DECLSPEC const FOX_FontMetrics* SDLCALL
+FOX_QueryFontMetrics(FOX_Font *font);
 
 /* end c function definitions when using c++ */
 #ifdef __cplusplus

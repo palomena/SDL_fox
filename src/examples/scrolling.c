@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <stdio.h>
 #include "SDL_fox.h"
 
 int main(int argc, char *argv[]) {
@@ -9,7 +10,11 @@ int main(int argc, char *argv[]) {
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 								600, 400, SDL_WINDOW_SHOWN);
 	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
-	FOX_Font *font = FOX_OpenFont(renderer, "DejaVu Sans :style=Bold :size=30");
+	FOX_Font *font = FOX_OpenFont(renderer, "./OpenSans-Light.ttf", 24);
+	if(!font) {
+		puts("Failed to open font file!");
+		return -1;
+	}
 	const Uint8 text[] = {
 		"Hello World! This is a short message... "
 		"We are currently testing the SDL_fox font "
@@ -46,7 +51,8 @@ int main(int argc, char *argv[]) {
 		Uint32 cticks = SDL_GetTicks();
 		if((cticks - ticks) > 100) {
 			ticks = cticks;
-			if(n < 100) n++;
+			printf("n: %d\n", n);
+			if(printstate == FOX_MORE_TEXT) n++;
 			swap = !swap;
 		}
 

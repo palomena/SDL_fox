@@ -9,8 +9,8 @@ Use *Ctrl+F* to search for whatever you are looking for.
 	- `FOX_Exit(void)`
 	- `FOX_WasInit(void)`
 - [Loading Fonts](#Loading-Fonts)
+	- `FOX_OpenFontFc()`
 	- `FOX_OpenFont()`
-	- `FOX_OpenFontEx()`
 	- `Fox_CloseFont()`
 - [Text Rendering](#Text-Rendering)
 	- `FOX_RenderChar()`
@@ -22,6 +22,7 @@ Use *Ctrl+F* to search for whatever you are looking for.
 	- `FOX_GetKerningOffset()`
 	- `FOX_GetAdvance()`
 	- `FOX_EnableKerning()`
+	- `FOX_QueryFontMetrics()`
 
 ## Initialization and Library state
 
@@ -81,9 +82,11 @@ source file.
 
 ---------
 ```c
-FOX_Font* FOX_OpenFont(SDL_Renderer *renderer, const unsigned char *fontstr);
+FOX_Font* FOX_OpenFontFc(SDL_Renderer *renderer, const unsigned char *fontstr);
 ```
 #### Description
+(This function is only available if SDL_fox has been built with
+fontconfig support.)  
 Loads a font via a fontconfig pattern. The supplied renderer is used
 to render the font into an internal texture and subsequently on each
 draw call. A font is always tied to one renderer.
@@ -104,12 +107,12 @@ A fontconfig font pattern might look like one of the examples below.
 
 In actual code:
 ```c
-FOX_Font *font = FOX_OpenFont(renderer, "Arial :size=14");
+FOX_Font *font = FOX_OpenFontFc(renderer, "Arial :size=14");
 ```
 
 ---------
 ```c
-FOX_Font* FOX_OpenFontEx(SDL_Renderer *renderer, const char *path, int size);
+FOX_Font* FOX_OpenFont(SDL_Renderer *renderer, const char *path, int size);
 ```
 #### Description
 Loads a font explicitly via a path to its file and its point size. This
@@ -130,7 +133,7 @@ requiring the exact path for each style.
 ```c
 //const char *bold = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf";
 const char *path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf";
-FOX_Font *font = FOX_OpenFontEx(renderer, path, 14);
+FOX_Font *font = FOX_OpenFont(renderer, path, 14);
 ```
 
 ---------
@@ -221,7 +224,8 @@ To modify its color use
 #### Arguments
 - `font`: SDL_fox font handle
 - `text`: UTF-8 string of text.
-- `endptr`: Pointer that is set by SDL_fox to the end of the (partially) 				printed string and thus marking start of the next string to print.
+- `endptr`: Pointer that is set by SDL_fox to the end of the (partially) 
+				printed string and thus marking start of the next string to print.
 - `rect`: The x and y coordinate to start printing from along with a maximum
 			width and height. The text is rendered down and to the right
 			starting from rect.(x,y) and up to rect.(x,y) + rect.(w,h).
@@ -231,7 +235,8 @@ To modify its color use
 #### Returns
 - `-1`: The supplied `rect` is not large enough or the font is too big.
 - `0`: Everything got printed. Nothing left to print.
-- `1`: There is more text to be printed. The `endptr` has been modified to 		indicate the beginning of the new string. It is up to you to set
+- `1`: There is more text to be printed. The `endptr` has been modified to 	
+	indicate the beginning of the new string. It is up to you to set
 	`text` equal to `*endptr` and start printing the next "page".
 - `2`: There is more text to be printed, but we have not reached the
 		limits of the rect yet. Printing has been stopped because
@@ -241,7 +246,7 @@ To modify its color use
 		at the next page.
 
 #### Example
-The example is given in a seperate file: [example.c](../src/example.c).  
+The example is given in a seperate file: [scrolling.c](../src/examples/scrolling.c).  
 It demonstrates oldschool rpg game text scrolling inside a fixed size
 rectangular area. The scrolling is achieved by incrementing argument `n`
 every 100ms. Once we have reached the end of the current page, we flash
@@ -359,5 +364,34 @@ does not support kerning then any call made to this function has no effect.
 #### Arguments
 - `font`: SDL_fox font handle
 - `enable`: boolean; `SDL_TRUE` to enable, `SDL_FALSE` to disable
+
+---------
+```c
+typedef struct {
+	int ptsize;
+	int height;
+} FOX_FontMetrics;
+```
+#### Description
+*FOX_FontMetrics* represent the dimensions of the font.
+Using *FOX_QueryFontMetrics()* one can get a handle to these dimensions.
+
+#### Fields
+- `int ptsize`: Font point size
+- `int height`: Font (max) height
+
+---------
+```c
+const FOX_FontMetrics* FOX_QueryFontMetrics(FOX_Font *font);
+```
+#### Description
+Returns a const handle to FOX_FontMetrics.
+
+#### Arguments
+- `font`: SDL_fox font handle
+
+#### Returns
+- `const FOX_FontMetrics*` on success
+- `NULL` on error
 
 ---------

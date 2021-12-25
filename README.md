@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 								400, 400, SDL_WINDOW_SHOWN);
 	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
-	FOX_Font *font = FOX_OpenFont(renderer, "DejaVu Sans :style=Bold :size=24");
+	FOX_Font *font = FOX_OpenFontFc(renderer, "DejaVu Sans :style=Bold :size=24");
 
 	for(SDL_bool open = SDL_TRUE; open;) {
 		SDL_Event event;
