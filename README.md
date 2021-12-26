@@ -99,7 +99,8 @@ More detailed instructions can be found in [docs/BUILD.md](docs/BUILD.md).
 
 ### Documentation
 
-Documentation can be found in [docs/README.md](docs/README.md).
+Documentation can be found in [docs/README.md](docs/README.md).  
+For an example application have a look at [sdlterm](https://github.com/palomena/sdlterm).
 
 ### License
 ```

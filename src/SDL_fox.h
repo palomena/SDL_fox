@@ -126,6 +126,9 @@ extern DECLSPEC void SDLCALL FOX_EnableKerning(FOX_Font *font,
 typedef struct {
 	int height;
 	int ptsize;
+	int max_width;
+	int max_height;
+	int max_advance;
 } FOX_FontMetrics;
 
 /* Queries the font metrics */

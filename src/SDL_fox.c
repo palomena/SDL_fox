@@ -13,7 +13,6 @@
  *****************************************************************************/
 
 #include "SDL_fox.h"
-#include <ctype.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #ifdef FOX_USE_FONTCONFIG
@@ -150,7 +149,7 @@ FOX_Font* FOX_OpenFontFc(SDL_Renderer *renderer, const unsigned char *fontstr) {
 static SDL_Surface* FOX_RenderFontToSurface(FOX_Font *font);
 
 FOX_Font* FOX_OpenFont(SDL_Renderer *renderer, const char *path, int size) {
-	FOX_Font *font = SDL_malloc(sizeof(*font));
+	FOX_Font *font = SDL_calloc(1, sizeof(*font));
 	font->renderer = renderer;
 
 	/* Open the font file using libfreetype */
@@ -208,6 +207,15 @@ static void FOX_SetMetrics(FOX_Font *font, Uint32 index, int xpos, int ypos) {
 	font->metrics[index].bearing.x = font->face->glyph->metrics.horiBearingX >> 6;
 	font->metrics[index].bearing.y = font->face->glyph->metrics.horiBearingY >> 6;
 	font->metrics[index].advance = font->face->glyph->metrics.horiAdvance >> 6;
+	if(font->size.max_width < font->metrics[index].rect.w) {
+		font->size.max_width = font->metrics[index].rect.w;
+	}
+	if(font->size.max_height < font->metrics[index].rect.h) {
+		font->size.max_height = font->metrics[index].rect.h;
+	}
+	if(font->size.max_advance < font->metrics[index].advance) {
+		font->size.max_advance = font->metrics[index].advance;
+	}
 }
 
 SDL_Surface* FOX_RenderFontToSurface(FOX_Font *font) {
@@ -267,7 +275,7 @@ SDL_Surface* FOX_RenderFontToSurface(FOX_Font *font) {
  *****************************************************************************/
 
 static const Uint8* skip_whitespace(const Uint8 *text) {
-	while(isspace(*text)) text++;
+	while(SDL_isspace(*text)) text++;
 	return text;
 }
 

@@ -1,6 +1,6 @@
 # Set to true if you want to compile SDL_fox with fontconfig support
 # Otherwise set it to false
-USE_FONTCONFIG := false
+USE_FONTCONFIG := true
 
 # Compiler to use during compilation
 # e.g.: gcc, x86_64-w64-mingw32-gcc, tcc, cc -m32, ...

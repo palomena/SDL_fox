@@ -370,6 +370,9 @@ does not support kerning then any call made to this function has no effect.
 typedef struct {
 	int ptsize;
 	int height;
+	int max_width;
+	int max_height;
+	int max_advance;
 } FOX_FontMetrics;
 ```
 #### Description
@@ -379,6 +382,9 @@ Using *FOX_QueryFontMetrics()* one can get a handle to these dimensions.
 #### Fields
 - `int ptsize`: Font point size
 - `int height`: Font (max) height
+- `int max_width`: Font max glyph width
+- `int max_height`: Font max glyph height
+- `int max_advance`: Font max glyph advance
 
 ---------
 ```c
