@@ -77,7 +77,7 @@ static FOX_Utf8 *FOX_utf[] = {
 	NULL
 };
 
-static int FOX_Utf8Length(const char ch) {
+static int FOX_Utf8Length(const unsigned char ch) {
 	int len = 0;
 
 	for(FOX_Utf8 **u = FOX_utf; *u; ++u) {
