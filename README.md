@@ -95,7 +95,7 @@ Missing steps or adaptation to different systems are given as an exercise to the
 3. `make`
 4. `sudo make install` (installs to /usr/local/include not /usr/lib/SDL2)
 
-More detailed instructions can be found in [docs/BUILD.md](docs/BUILD.md).
+More detailed instructions can be found in [docs/BUILDING.md](docs/BUILDING.md).
 
 ### Documentation
 
