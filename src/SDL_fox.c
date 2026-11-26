@@ -349,7 +349,7 @@ int FOX_RenderChar(FOX_Font *font, Uint32 ch, Uint32 previous_ch,
 		SDL_Rect dstrect;
 		SDL_Color color;
 
-		dstrect.x = position->x;
+		dstrect.x = position->x + metrics->bearing.x;
 		dstrect.y = position->y - metrics->bearing.y + font->size.height;
 		dstrect.w = metrics->rect.w;
 		dstrect.h = metrics->rect.h;
